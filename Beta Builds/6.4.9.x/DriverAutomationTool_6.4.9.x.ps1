@@ -12,7 +12,7 @@
     Author:      Maurice Daly
     Twitter:     @Modaly_IT
     Created:     2017-01-01
-    Updated:     2020-06-28
+    Updated:     2021-06-16
     
     Version history:
 	6.0.0 - (2018-03-29)	New verison. Graphical redesign, improved layout, HP individual driver downloads
@@ -106,6 +106,7 @@
 							Updated model and distribution point WMI queries for better performance
 							Updated XML logic file creation function
 							Updated Dell XML handling
+	6.4.9.x - (2021-16-06)	Hotfix patch for limiting architecture of drivers included in compressed driver packages (ZIP, 7-Zip, WIM)
 	#>
 param (
 	[parameter(Position = 0, HelpMessage = "Option for preventing XML settings output")]
