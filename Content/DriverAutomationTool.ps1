@@ -15478,7 +15478,6 @@ AABJRU5ErkJgggs='))
 						}
 					}
 					Set-Location -Path $global:TempDirectory
-					}
 				}
 				
 				# Remove legacy BIOS packages
