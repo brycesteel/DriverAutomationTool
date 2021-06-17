@@ -12,7 +12,7 @@
     Author:      Maurice Daly
     Twitter:     @Modaly_IT
     Created:     2017-01-01
-    Updated:     2021-06-16
+    Updated:     2021-06-17
     
     Version history:
 	6.0.0 - (2018-03-29)	New verison. Graphical redesign, improved layout, HP individual driver downloads
@@ -106,7 +106,9 @@
 							Updated model and distribution point WMI queries for better performance
 							Updated XML logic file creation function
 							Updated Dell XML handling
-	6.4.9.x - (2021-16-06)	Hotfix patch for limiting architecture of drivers included in compressed driver packages (ZIP, 7-Zip, WIM)
+	6.4.9.x - (2021-17-06)	Backported escape of dism CaptureDir for WIM
+							Backported cleanup of temp WIM directory 
+							Hotfix patch for limiting architecture of drivers included in compressed driver packages (ZIP, 7-Zip, WIM)
 	#>
 param (
 	[parameter(Position = 0, HelpMessage = "Option for preventing XML settings output")]
@@ -6002,7 +6004,7 @@ AAAA///////////wAAAAAAAA/////////////////8AAAAD///////////4AAAAAAAf/////////
 	$MainForm.Name = 'MainForm'
 	$MainForm.Padding = '0, 0, 0, 10'
 	$MainForm.StartPosition = 'CenterScreen'
-	$MainForm.Text = 'Driver Automation Tool: Version 6.4.9'
+	$MainForm.Text = 'Driver Automation Tool: Version 6.4.9.x'
 	$MainForm.add_FormClosing($MainForm_FormClosing)
 	$MainForm.add_Load($MainForm_Load)
 	$MainForm.add_Shown($MainForm_Shown)
@@ -11904,7 +11906,7 @@ AABJRU5ErkJgggs='))
 	
 	# Script Build Numbers
 	[version]$ScriptRelease = "6.4.9"
-	$ScriptBuildDate = "2020-09-14"
+	$ScriptBuildDate = "2021-06-17"
 	[version]$NewRelease = (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/maurice-daly/DriverAutomationTool/master/Data//DriverAutomationToolRev.txt" -UseBasicParsing).Content
 	$ReleaseNotesURL = "https://raw.githubusercontent.com/maurice-daly/DriverAutomationTool/master/Data/DriverAutomationToolNotes.txt"
 	
@@ -17345,6 +17347,8 @@ AABJRU5ErkJgggs='))
 							global:Write-LogEntry -Value "DriverPackage: Self-extracting WIM driver package created" -Severity 1
 							global:Write-LogEntry -Value "DriverPackage: Copying DriverPackage.wim to $($DriverPackageDest)" -Severity 1
 							Get-ChildItem -Path $WimTempLocation -Filter "DriverPackage.wim" | Copy-Item -Destination "$DriverPackageDest" -Force
+							global:Write-LogEntry -Value "DriverPackage: Removing contents from $WimTempLocation" -Severity 1
+							Remove-Item -Path $WimTempLocation -Force -Recurse
 							Return $true
 						} else {
 							global:Write-LogEntry -Value "Error: Failed to locate DriverPackage.wim. Please review the DISM log file located in $DriverExtractPackageSource" -Severity 1
