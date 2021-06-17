@@ -17335,7 +17335,7 @@ AABJRU5ErkJgggs='))
 					global:Write-LogEntry -Value "DriverPackage: Copying extracted drivers to $WimTempLocation for WIM packaging" -Severity 1
 					Copy-Item -Path $DriverExtractPackageSource -Destination $WimTempLocation -Recurse -Force
 					global:Write-LogEntry -Value "DriverPackage: Mounting UNC path for WIM creation" -Severity 1
-					$DismArgs = "/Capture-Image /ImageFile:`"$(Join-Path -Path $WimTempLocation -ChildPath DriverPackage.wim)`" /CaptureDir:$WimTempLocation /Name:`"$WimDescription`" /Description:`"$WimDescription`" /Compress:max"
+					$DismArgs = "/Capture-Image /ImageFile:`"$(Join-Path -Path $WimTempLocation -ChildPath DriverPackage.wim)`" /CaptureDir:`"$WimTempLocation`" /Name:`"$WimDescription`" /Description:`"$WimDescription`" /Compress:max"
 					global:Write-LogEntry -Value "DriverPackage: DISM initiated with the following args- $DismArgs" -Severity 1
 					$DismProcess = Start-Process "dism.exe" -ArgumentList $DismArgs -NoNewWindow -Wait -PassThru -RedirectStandardOutput .\DismAction.log
 					if ($DismProcess.ExitCode -eq 1) {
