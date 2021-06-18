@@ -71,7 +71,7 @@ MzyJILzF2ANupICTbuPvMR7Nj0dj+fdf7t4BngtoANoDAAA=#>
     Author:      Maurice Daly
     Twitter:     @Modaly_IT
     Created:     2017-01-01
-    Updated:     2020-10-22
+    Updated:     2021-06-17
     
     Version history:
 	6.0.0 - (2018-03-29)	New verison. Graphical redesign, improved layout, HP individual driver downloads
@@ -167,6 +167,7 @@ MzyJILzF2ANupICTbuPvMR7Nj0dj+fdf7t4BngtoANoDAAA=#>
 							Updated Dell XML handling
 	6.4.9.1 - (2020-22-10)	2020-10-22 commit 0879f36a82ddb9b72d901778b165a6226bd406f7
 							EXE with various hotfixes => PS1 transcription
+	6.4.9.2 - (2021-17-06)	Hotfix patch for limiting architecture of drivers included in compressed driver packages (ZIP, 7-Zip, WIM)
 	#>
 
 
@@ -8738,7 +8739,7 @@ AAAA///////////wAAAAAAAA/////////////////8AAAAD///////////4AAAAAAAf/////////
 	$MainForm.Name = 'MainForm'
 	$MainForm.Padding = '0, 0, 0, 10'
 	$MainForm.StartPosition = 'CenterScreen'
-	$MainForm.Text = 'Driver Automation Tool: Version 6.4.9.1'
+	$MainForm.Text = 'Driver Automation Tool: Version 6.4.9.2'
 	$MainForm.add_FormClosing($MainForm_FormClosing)
 	$MainForm.add_Load($MainForm_Load)
 	$MainForm.add_Shown($MainForm_Shown)
@@ -14641,8 +14642,8 @@ AABJRU5ErkJgggs='))
 	[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 	
 	# Script Build Numbers
-	[version]$ScriptRelease = "6.4.9.1"
-	$ScriptBuildDate = "2021-10-22"
+	[version]$ScriptRelease = "6.4.9.2"
+	$ScriptBuildDate = "2021-06-17"
 	[version]$NewRelease = (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/maurice-daly/DriverAutomationTool/master/Data//DriverAutomationToolRev.txt" -UseBasicParsing).Content
 	$ReleaseNotesURL = "https://raw.githubusercontent.com/maurice-daly/DriverAutomationTool/master/Data/DriverAutomationToolNotes.txt"
 	
@@ -16574,8 +16575,21 @@ AABJRU5ErkJgggs='))
 		global:Write-LogEntry -Value "$($Product): Checking for extracted $($PackageType.ToLower())" -Severity 1
 		global:Write-LogEntry -Value "$($Product): Import into is $ImportInto" -Severity 1
 		if ($ImportInto -like "*Driver*") {
-			if ((Get-ChildItem -Recurse -Path "$DriverExtractDest" -Filter *.inf -File).count -ne 0) {
-				global:Write-LogEntry -Value "$($Product): Driver count in path $DriverExtractDest - $((Get-ChildItem -Recurse -Path "$DriverExtractDest" -Filter *.inf -File).count) " -Severity 1
+			if ($Make -eq "Dell") {
+				$DriverExtractPackageSource = (
+					Get-ChildItem -Path $DriverExtractDest -Recurse -Directory |
+					Where-Object {$_.Name -eq $Architecture} |
+					Select-Object -First 1 -ExpandProperty 'FullName'
+				)
+			} else {
+				$DriverExtractPackageSource = $DriverExtractDest
+			}
+			global:Write-LogEntry -Value "$($Product): Using extracted directory for package source of: $DriverExtractPackageSource" -Severity 1
+			$CountOfDriverFilesInExtractSource = @(
+				Get-ChildItem -Recurse -Path $DriverExtractPackageSource -Filter *.inf -File
+			).Count
+			if ($CountOfDriverFilesInExtractSource -gt 0) {
+				global:Write-LogEntry -Value "$($Product): Driver count in path $DriverExtractPackageSource - $CountOfDriverFilesInExtractSource " -Severity 1
 				global:Write-LogEntry -Value "==================== $PRODUCT DRIVER IMPORT ====================" -Severity 1
 				Set-Location -Path ($SiteCode + ":")
 				Set-Location -Path $global:TempDirectory
@@ -16583,8 +16597,8 @@ AABJRU5ErkJgggs='))
 					New-Item -ItemType Directory -Path "$DriverPackageDest"
 				}
 				global:Write-LogEntry -Value "$($Product): Creating driver package $CMDriverPackage" -Severity 1
-				global:Write-LogEntry -Value "$($Product): Searching for driver INF files in $DriverExtractDest" -Severity 1
-				$DriverINFFiles = Get-ChildItem -Path "$DriverExtractDest" -Recurse -Filter "*.inf" -File | Select-Object Name, FullName | Where-Object {
+				global:Write-LogEntry -Value "$($Product): Searching for driver INF files in $DriverExtractPackageSource" -Severity 1
+				$DriverINFFiles = Get-ChildItem -Path $DriverExtractPackageSource -Recurse -Filter "*.inf" -File | Select-Object Name, FullName | Where-Object {
 					$_.FullName -like "*$Architecture*"
 				}
 				if ($DriverINFFiles.Count -ne $null) {
@@ -16607,7 +16621,7 @@ AABJRU5ErkJgggs='))
 						$PackageDescription = "(Models included:$global:SkuValue)"
 						
 						# Move Extracted Drivers To Driver Package Directory
-						global:Write-LogEntry -Value "$($Product): Source directory $DriverExtractDest" -Severity 1
+						global:Write-LogEntry -Value "$($Product): Source directory $DriverExtractPackageSource" -Severity 1
 						global:Write-LogEntry -Value "$($Product): Destination directory $DriverPackageDest" -Severity 1
 						global:Write-LogEntry -Value "$($Product): Creating Package for $Make $Model (Version $DriverRevision)" -Severity 1
 						Set-Location -Path ($SiteCode + ":")
@@ -16670,14 +16684,27 @@ AABJRU5ErkJgggs='))
 			} else {
 				global:Write-LogEntry -Value "======== DRIVER EXTRACT ISSUE DETECTED ========" -Severity 3
 				global:Write-LogEntry -Value "$($Product): Issues occurred while reading extracted drivers" -Severity 3
-				global:Write-LogEntry -Value "$($Product): Driver count in path $DriverExtractDest - $((Get-ChildItem -Recurse -Path "$DriverExtractDest" -Filter *.inf -File).count) " -Severity 1
+				global:Write-LogEntry -Value "$($Product): Driver count in path $DriverExtractPackageSource - $CountOfDriverFilesInExtractSource " -Severity 1
 			}
 		}
 		if ($ImportInto -like "*Standard*") {
 			if ($PackageType -match "Drivers") {
-				global:Write-LogEntry -Value "$($Product): Driver count in path $DriverExtractDest - $((Get-ChildItem -Recurse -Path "$DriverExtractDest" -Filter *.inf -File).count) " -Severity 1
-				if ((Get-ChildItem -Recurse -Path "$DriverExtractDest" -Filter *.inf -File).Count -ne $null) {
-					global:Write-LogEntry -Value "$($Product): Validated drivers exist in $DriverExtractDest - Processing driver packaging steps " -Severity 1
+				if ($Make -eq "Dell") {
+					$DriverExtractPackageSource = (
+						Get-ChildItem -Path $DriverExtractDest -Recurse -Directory |
+						Where-Object {$_.Name -eq $Architecture} |
+						Select-Object -First 1 -ExpandProperty 'FullName'
+					)
+				} else {
+					$DriverExtractPackageSource = $DriverExtractDest
+				}
+				global:Write-LogEntry -Value "$($Product): Using extracted directory for package source of: $DriverExtractPackageSource" -Severity 1
+				$CountOfDriverFilesInExtractSource = @(
+					Get-ChildItem -Recurse -Path $DriverExtractPackageSource -Filter *.inf -File
+				).Count
+				if ($CountOfDriverFilesInExtractSource -gt 0) {
+					global:Write-LogEntry -Value "$($Product): Driver count in path $DriverExtractPackageSource - $CountOfDriverFilesInExtractSource " -Severity 1
+					global:Write-LogEntry -Value "$($Product): Validated drivers exist in $DriverExtractPackageSource - Processing driver packaging steps " -Severity 1
 					global:Write-LogEntry -Value "==================== $PRODUCT DRIVER PACKAGE  ====================" -Severity 1
 					
 					if ([string]::IsNullOrEmpty($ExistingPackageID)) {
@@ -16696,11 +16723,11 @@ AABJRU5ErkJgggs='))
 						$PackageDescription = "(Models included:$global:SkuValue)"
 						
 						# Move Extracted Drivers To Driver Package Directory
-						global:Write-LogEntry -Value "$($Product): Source directory $DriverExtractDest" -Severity 1
+						global:Write-LogEntry -Value "$($Product): Source directory $DriverExtractPackageSource" -Severity 1
 						global:Write-LogEntry -Value "$($Product): Destination directory $DriverPackageDest" -Severity 1
 						
 						# Copy Drivers To Package Location
-						$DriverPackageCreated = New-DriverPackage -Make $Make -DriverExtractDest $DriverExtractDest -Architecture $Architecture -DriverPackageDest $DriverPackageDest -PackageCompression $PackageCompressionCheckBox.Checked -CompressionType $CompressionType.Text
+						$DriverPackageCreated = New-DriverPackage -Make $Make -DriverExtractPackageSource $DriverExtractPackageSource -Architecture $Architecture -DriverPackageDest $DriverPackageDest -PackageCompression $PackageCompressionCheckBox.Checked -CompressionType $CompressionType.Text
 						
 						if ($DriverPackageCreated -eq $true) {
 							global:Write-LogEntry -Value "$($Product): Drivers copied successfully, creating package." -Severity 1
@@ -16745,7 +16772,7 @@ AABJRU5ErkJgggs='))
 				} else {
 					global:Write-LogEntry -Value "======== DRIVER EXTRACT ISSUE DETECTED ========" -Severity 3
 					global:Write-LogEntry -Value "$($Product): Issues occurred while reading extracted drivers" -Severity 3
-					global:Write-LogEntry -Value "$($Product): Driver count in path $DriverExtractDest - $((Get-ChildItem -Recurse -Path "$DriverExtractDest" -Filter *.inf -File).count) " -Severity 1
+					global:Write-LogEntry -Value "$($Product): Driver count in path $DriverExtractPackageSource - $CountOfDriverFilesInExtractSource " -Severity 1
 				}
 			} elseif ($PackageType -match "Firmware") {
 				# Modify package name
@@ -16825,7 +16852,7 @@ AABJRU5ErkJgggs='))
 				} else {
 					global:Write-LogEntry -Value "======== DRIVER FIRMWARE ISSUE DETECTED ========" -Severity 3
 					global:Write-LogEntry -Value "$($Product): Issues occurred while reading extracted firmware" -Severity 3
-					global:Write-LogEntry -Value "$($Product): Firmware count in path $DriverExtractDest - $((Get-ChildItem -Recurse -Path "$DriverExtractDest" -Filter *.inf -File).count) " -Severity 1
+					global:Write-LogEntry -Value "$($Product): Firmware count in path $FirmwareExtractDest - $((Get-ChildItem -Recurse -Path "$FirmwareExtractDest" -Filter *.inf -File).count) " -Severity 1
 				}
 				Get-Job -Name "$Model-Firmware-Package" | Remove-Job
 			}
@@ -20016,7 +20043,7 @@ AABJRU5ErkJgggs='))
 		param
 		(
 			$Make,
-			$DriverExtractDest,
+			$DriverExtractPackageSource,
 			$Architecture,
 			$DriverPackageDest,
 			$PackageCompression,
@@ -20028,26 +20055,26 @@ AABJRU5ErkJgggs='))
 				global:Write-LogEntry -Value "$($Product): Package compression is $($PackageCompressionCheckBox.Checked)" -Severity 1
 				global:Write-LogEntry -Value "$($Product): Package compression type is $CompressionType" -Severity 1
 				if ($CompressionType -eq "7-Zip") {
-					global:Write-LogEntry -Value "DriverPackage: Compressing files in $DriverExtractDest" -Severity 1
+					global:Write-LogEntry -Value "DriverPackage: Compressing files in $DriverExtractPackageSource" -Severity 1
 					global:Write-LogEntry -Value "DriverPackage: Creating self expanding 7-Zip exe file in the following location - $(Join-Path -path $DriverPackageDest -ChildPath 'DriverPackage.exe')" -Severity 1
-					$7ZipArgs = "a -sfx7z.sfx DriverPackage.exe -r " + ' "' + $DriverExtractDest + '"'
+					$7ZipArgs = "a -sfx7z.sfx DriverPackage.exe -r " + ' "' + $DriverExtractPackageSource + '"'
 					global:Write-LogEntry -Value "DriverPackage: 7-Zip location is $(Join-Path -Path $global:7ZIPLocation -ChildPath "7z.exe") " -Severity 1
 					global:Write-LogEntry -Value "DriverPackage: 7-Zip arguments are $7ZipArgs" -Severity 1
 					global:Write-LogEntry -Value "DriverPackage: Creating temporary PS drive for 7-Zip" -Severity 1
-					New-PSDrive -Name "Drivers" -PSProvider FileSystem -Root $DriverExtractDest
+					New-PSDrive -Name "Drivers" -PSProvider FileSystem -Root $DriverExtractPackageSource
 					Set-Location -Path "Drivers:\"
 					global:Write-LogEntry -Value "DriverPackage: Invoking 7Zip appliction to package content" -Severity 1
 					$7ZipProcess = Start-Process (Join-Path -Path $global:7ZIPLocation -ChildPath "7z.exe") -ArgumentList $7ZipArgs -NoNewWindow -Wait -PassThru -RedirectStandardOutput .\7zipAction.log
 					if ($7ZipProcess.ExitCode -eq 1) {
 						global:Write-LogEntry -Value "Error: Issues occrured during 7Zip compression progress. Review the 7zipAction.txt log." -Severity 2
 					} else {
-						if ([boolean](Get-ChildItem -Path $DriverExtractDest -Filter "DriverPackage.exe")) {
+						if ([boolean](Get-ChildItem -Path $DriverExtractPackageSource -Filter "DriverPackage.exe")) {
 							global:Write-LogEntry -Value "DriverPackage: Self-extracting 7-Zip driver package created" -Severity 1
 							global:Write-LogEntry -Value "DriverPackage: Copying DriverPackage.exe to $($DriverPackageDest)" -Severity 1
-							Get-ChildItem -Path $DriverExtractDest -Filter "DriverPackage.exe" | Copy-Item -Destination "$DriverPackageDest" -Force
+							Get-ChildItem -Path $DriverExtractPackageSource -Filter "DriverPackage.exe" | Copy-Item -Destination "$DriverPackageDest" -Force
 							Return $true
 						} else {
-							global:Write-LogEntry -Value "Error: Failed to locate DriverPackage.exe. Please review the 7Zip log file located in $DriverExtractDest" -Severity 1
+							global:Write-LogEntry -Value "Error: Failed to locate DriverPackage.exe. Please review the 7Zip log file located in $DriverExtractPackageSource" -Severity 1
 							Return $false
 						}
 					}
@@ -20055,7 +20082,7 @@ AABJRU5ErkJgggs='))
 				} elseif ($CompressionType -eq "WIM") {
 					global:Write-LogEntry -Value "DriverPackage: Creating WIM file" -Severity 1
 					$WimDescription = "Driver Automation Tool Package"
-					global:Write-LogEntry -Value "DriverPackage: Compressing files in $DriverExtractDest" -Severity 1
+					global:Write-LogEntry -Value "DriverPackage: Compressing files in $DriverExtractPackageSource" -Severity 1
 					Set-Location -Path $global:TempDirectory
 					$WimTempLocation = Join-Path -Path $global:TempDirectory -ChildPath "WimDriverFiles"
 					if ((Test-Path -Path $WimTempLocation) -eq $false) {
@@ -20063,7 +20090,7 @@ AABJRU5ErkJgggs='))
 						New-Item -Path $WimTempLocation -ItemType Dir | Out-Null
 					}
 					global:Write-LogEntry -Value "DriverPackage: Copying extracted drivers to $WimTempLocation for WIM packaging" -Severity 1
-					Copy-Item -Path $DriverExtractDest -Destination $WimTempLocation -Recurse -Force
+					Copy-Item -Path $DriverExtractPackageSource -Destination $WimTempLocation -Recurse -Force
 					global:Write-LogEntry -Value "DriverPackage: Mounting UNC path for WIM creation" -Severity 1
 					$DismArgs = "/Capture-Image /ImageFile:`"$(Join-Path -Path $WimTempLocation -ChildPath DriverPackage.wim)`" /CaptureDir:`"$WimTempLocation`" /Name:`"$WimDescription`" /Description:`"$WimDescription`" /Compress:max"
 					global:Write-LogEntry -Value "DriverPackage: DISM initiated with the following args- $DismArgs" -Severity 1
@@ -20079,15 +20106,15 @@ AABJRU5ErkJgggs='))
 							Remove-Item -Path $WimTempLocation -Force -Recurse
 							Return $true
 						} else {
-							global:Write-LogEntry -Value "Error: Failed to locate DriverPackage.wim. Please review the DISM log file located in $DriverExtractDest" -Severity 1
+							global:Write-LogEntry -Value "Error: Failed to locate DriverPackage.wim. Please review the DISM log file located in $DriverExtractPackageSource" -Severity 1
 							Return $false
 						}
 					}
 					Set-Location -Path $global:TempDirectory
 				} else {
-					global:Write-LogEntry -Value "DriverPackage: Compressing files in $DriverExtractDest" -Severity 1
+					global:Write-LogEntry -Value "DriverPackage: Compressing files in $DriverExtractPackageSource" -Severity 1
 					global:Write-LogEntry -Value "DriverPackage: Creating zip file in the following location - $(Join-Path -path $DriverPackageDest -ChildPath 'DriverPackage.zip')" -Severity 1
-					Compress-Archive -Path $DriverExtractDest -DestinationPath (Join-Path -path $DriverPackageDest -ChildPath "DriverPackage.zip") -CompressionLevel Fastest -Force
+					Compress-Archive -Path $DriverExtractPackageSource -DestinationPath (Join-Path -path $DriverPackageDest -ChildPath "DriverPackage.zip") -CompressionLevel Fastest -Force
 					if ([boolean](Get-ChildItem -Path (Join-Path -path $DriverPackageDest -ChildPath "DriverPackage.zip"))) {
 						Return $true
 					} else {
@@ -20096,14 +20123,7 @@ AABJRU5ErkJgggs='))
 				}
 				
 			} else {
-				if ($Make -eq "Dell") {
-					$CopyFileCount = (Get-ChildItem -Path "$DriverExtractDest" -File).Count
-					Copy-Item -Path $(Get-ChildItem -Path "$DriverExtractDest" -Recurse -Directory | Where-Object {
-							$_.Name -eq "$Architecture"
-						} | Select-Object -First 1).FullName -Destination "$DriverPackageDest" -Container -Recurse -Force
-				} else {
-					Get-ChildItem -Path "$DriverExtractDest" | Copy-Item -Destination "$DriverPackageDest" -Container -Recurse -Force
-				}
+				Get-ChildItem -Path $DriverExtractPackageSource | Copy-Item -Destination $DriverPackageDest -Container -Recurse -Force
 				global:Write-LogEntry -Value "DriverPackage: Drivers copied to - $DriverPackageDest" -Severity 1
 				Return $true
 			}
