@@ -37,8 +37,8 @@ param (
 	[parameter(Position = 0, ParameterSetName = "AzureProvisioning", HelpMessage = "Option to configure Azure tenant information for Intune native management")]
 	[switch]$AzureProvisioning
 )
-# $PSScriptRoot = "C:\github-brycesteel\DriverAutomationTool\Beta Builds\6.5.5"
-# $PSCommandPath = "C:\github-brycesteel\DriverAutomationTool\Beta Builds\6.5.5\DriverAutomationTool.exe"
+# $PSScriptRoot = "C:\Program Files\MSEndpointMgr\Driver Automation Tool"
+# $PSCommandPath = "C:\Program Files\MSEndpointMgr\Driver Automation Tool\DriverAutomationTool.exe"
 
 
 #region Source: Startup.pss
@@ -73,7 +73,7 @@ MzyJILzF2ANupICTbuPvMR7Nj0dj+fdf7t4BngtoANoDAAA=#>
     Author:      Maurice Daly
     Twitter:     @Modaly_IT
     Created:     2017-01-01
-    Updated:     2020-18-03
+    Updated:     2021-06-17
     
     Version history:
 	6.0.0 - (2018-03-29)	New verison. Graphical redesign, improved layout, HP individual driver downloads
@@ -149,9 +149,27 @@ MzyJILzF2ANupICTbuPvMR7Nj0dj+fdf7t4BngtoANoDAAA=#>
 	6.4.6 - (2020-18-03)	Fixed Lenovo download link logic and added further output
 							Updated package creation for all packages just to include the SKU/BaseBoard values
 							Updated link within the tool to GitHub as Technet is being retired
-							Updated custom package creation to include Windows 10 1909		
-	6.4.7 - ()				BETA Testing
-	6.4.8 
+							Updated custom package creation to include Windows 10 1909	
+	6.4.6 - (2020-28-06)	Added support for Windwos 10 2004
+							Added support for HP SoftPaq creation and updated UI to select available SoftPaqs per models	
+							Added support for creation of 7zip driver packages
+							Added support for XML based modern driver and BIOS management solutions
+							Faster UI and XML handling
+							Updated Lenovo XML source
+	6.4.8 - (2020-15-07)	Added support for Windwos 10 2004
+							Added support for HP SoftPaq creation and updated UI to select available SoftPaqs per models	
+							Added support for creation of 7zip driver packages
+							Added support for XML based modern driver and BIOS management solutions
+							Faster UI and XML handling
+							Updated Lenovo XML source
+							Dell Flash 64w handling updated
+	6.4.9 - (2020-15-09)	Added WIM Support
+							Updated model and distribution point WMI queries for better performance
+							Updated XML logic file creation function
+							Updated Dell XML handling
+	6.5.5 - (2021-28-03)	2021-03-28 BETA commit efc61f1f3aaf69cc2aabccfb67bd9180866037c5
+							EXE with various hotfixes (including Win10 20H1 support) => PS1 transcription
+	6.5.5.1 - (2021-17-06)	Hotfix patch for limiting architecture of drivers included in compressed driver packages (ZIP, 7-Zip, WIM)
 	#>
 
 
@@ -9076,7 +9094,7 @@ AAAA///////////wAAAAAAAA/////////////////8AAAAD///////////4AAAAAAAf/////////
 	$MainForm.Name = 'MainForm'
 	$MainForm.Padding = '0, 0, 0, 10'
 	$MainForm.StartPosition = 'CenterScreen'
-	$MainForm.Text = 'Driver Automation Tool: Version 6.5.5.x'
+	$MainForm.Text = 'Driver Automation Tool: Version 6.5.5.1'
 	$MainForm.add_FormClosing($MainForm_FormClosing)
 	$MainForm.add_Load($MainForm_Load)
 	$MainForm.add_Shown($MainForm_Shown)

@@ -35,8 +35,8 @@ param (
 	[ValidateSet($false, $true)]
 	[string]$OptionLocked = $false
 )
-$PSScriptRoot = "C:\Program Files\MSEndpointMgr\Driver Automation Tool"
-$PSCommandPath = "C:\Program Files\MSEndpointMgr\Driver Automation Tool\DriverAutomationTool.exe"
+# $PSScriptRoot = "C:\Program Files\MSEndpointMgr\Driver Automation Tool"
+# $PSCommandPath = "C:\Program Files\MSEndpointMgr\Driver Automation Tool\DriverAutomationTool.exe"
 
 
 #region Source: Startup.pss
