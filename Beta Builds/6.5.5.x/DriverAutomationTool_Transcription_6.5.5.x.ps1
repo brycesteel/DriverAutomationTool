@@ -21312,6 +21312,8 @@ AABJRU5ErkJgggs='))
 							global:Write-LogEntry -Value "DriverPackage: Self-extracting WIM driver package created" -Severity 1
 							global:Write-LogEntry -Value "DriverPackage: Copying DriverPackage.wim to $($DriverPackageDest)" -Severity 1
 							Get-ChildItem -Path $WimTempLocation -Filter "DriverPackage.wim" | Copy-Item -Destination "$DriverPackageDest" -Force
+							global:Write-LogEntry -Value "DriverPackage: Removing contents from $WimTempLocation" -Severity 1
+							Remove-Item -Path $WimTempLocation -Force -Recurse
 							Return $true
 						} else {
 							global:Write-LogEntry -Value "Error: Failed to locate DriverPackage.wim. Please review the DISM log file located in $DriverExtractPackageSource" -Severity 1
